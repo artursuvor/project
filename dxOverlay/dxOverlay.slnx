@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="dxOverlay/dxOverlay.vcxproj" Id="30598dcc-c515-425d-86d8-f7456cf8b08c" />
+</Solution>
