@@ -39,14 +39,14 @@ static void StopInternalEffect();
 
 static DWORD GetEffectDuration(EffectType type) {
     switch (type) {
-    case EffectType::Erase:              return 45000;
-    case EffectType::Blur:               return 30000;
-    case EffectType::HalfScreenCover:    return 45000;
-    case EffectType::DisableSensitivity: return 15000;
+    case EffectType::Erase:              return 30000;
+    case EffectType::Blur:               return 20000;
+    case EffectType::HalfScreenCover:    return 30000;
+    case EffectType::DisableSensitivity: return 10000;
     case EffectType::SensitivityHigh:    return 15000;
-    case EffectType::InvertWASD:          return 45000;
-    case EffectType::InvertMouse:         return 45000;
-    case EffectType::FpsLow:              return 20000;
+    case EffectType::InvertWASD:          return 35000;
+    case EffectType::InvertMouse:         return 35000;
+    case EffectType::FpsLow:              return 15000;
     default:                             return 0;
     }
 }

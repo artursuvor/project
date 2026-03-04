@@ -27,8 +27,8 @@ void UpdateBlurEffect() {
 
     if (now - g_lastGrow >= 2) {   // скорость роста
         g_lineCount += 1;
-        if (g_lineCount > 250)
-            g_lineCount = 250;
+        if (g_lineCount > 75)
+            g_lineCount = 75;
 
         g_lastGrow = now;
     }
