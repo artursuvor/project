@@ -1,130 +1,127 @@
-﻿#include <Windows.h>
+﻿/**
+ * @file ControlWindow.cpp
+ * @brief Реализация DEV панели управления
+ * 
+ * Предоставляет окно с кнопками для тестирования эффектов
+ */
+
+#include <Windows.h>
 #include "ControlWindow.h"
 #include "EffectSystem.h"
+#include "Types.h"
+#include "Config.h"
 
-// --------------------
-// Control window handle
-// --------------------
+// ============================================================================
+// WINDOW STATE
+// ============================================================================
+
+/** Handle окна контроля */
 static HWND g_hwndControl = nullptr;
+
+/** Действие, ожидающее выполнения после задержки */
+static PendingAction g_pendingAction = PendingAction::None;
 
 HWND GetControlWindow() {
     return g_hwndControl;
 }
 
-// --------------------
-// Delay config
-// --------------------
-#define DELAY_TIMER_ID  5000
-#define ACTION_DELAY_MS 3000
+/**
+ * @brief Получить handle окна контроля
+ */
 
-// --------------------
-// Button IDs
-// --------------------
-#define BTN_START_SYSTEM   1001
-#define BTN_STOP_SYSTEM    1002
+// ============================================================================
+// PENDING ACTION EXECUTOR
+// ============================================================================
 
-#define BTN_FORCE_ROULETTE 1100
-#define BTN_STOP_EFFECT    1101
-
-#define BTN_ERASE          1200
-#define BTN_BLUR           1201
-#define BTN_HALF           1202
-#define BTN_INVERT_WASD    1203
-#define BTN_INVERT_MOUSE   1204
-#define BTN_LOW_FPS        1205
-#define BTN_PREVIEW_ROULETTE 1300
-#define BTN_STOP_PREVIEW     1301
-
-
-// --------------------
-// Pending action
-// --------------------
-enum class PendingAction {
-    None,
-    StartSystem,
-    StopSystem,
-    ForceRoulette,
-    StopEffect,
-    ForceErase,
-    ForceBlur,
-    ForceHalf,
-    ForceInvertWASD,
-    ForceInvertMouse,
-    ForceFpsLow,
-    PreviewRoulette,
-    StopPreviewRoulette
-};
-
-static PendingAction g_pendingAction = PendingAction::None;
-
-// --------------------
-// Execute pending action
-// --------------------
+/**
+ * @brief Выполнить запланированное действие
+ * 
+ * Вызывается из таймера после задержки ACTION_DELAY_MS
+ */
 static void ExecutePendingAction() {
-
     switch (g_pendingAction) {
-    case PendingAction::StartSystem:        StartSystem(); break;
-    case PendingAction::StopSystem:         StopSystem(); break;
-    case PendingAction::ForceRoulette:      Dev_ForceRoulette(); break;
-    case PendingAction::StopEffect:         Dev_StopEffect(); break;
-    case PendingAction::ForceErase:         Dev_ForceEffect(EffectType::Erase); break;
-    case PendingAction::ForceBlur:          Dev_ForceEffect(EffectType::Blur); break;
-    case PendingAction::ForceHalf:          Dev_ForceEffect(EffectType::HalfScreenCover); break;
-    case PendingAction::ForceInvertWASD:    Dev_ForceEffect(EffectType::InvertWASD); break;
-    case PendingAction::ForceInvertMouse:   Dev_ForceEffect(EffectType::InvertMouse); break;
-    case PendingAction::ForceFpsLow:        Dev_ForceEffect(EffectType::FpsLow); break;
-    case PendingAction::PreviewRoulette:     Dev_StartPreviewRoulette(); break;
-    case PendingAction::StopPreviewRoulette: Dev_StopPreviewRoulette(); break;
-
-
-    default: break;
+    // System control
+    case PendingAction::StartSystem:            StartSystem(); break;
+    case PendingAction::StopSystem:             StopSystem(); break;
+    
+    // Roulette control
+    case PendingAction::ForceRoulette:          Dev_ForceRoulette(); break;
+    case PendingAction::StopEffect:             Dev_StopEffect(); break;
+    
+    // Individual effects
+    case PendingAction::ForceErase:             Dev_ForceEffect(EffectType::Erase); break;
+    case PendingAction::ForceBlur:              Dev_ForceEffect(EffectType::Blur); break;
+    case PendingAction::ForceHalf:              Dev_ForceEffect(EffectType::HalfScreenCover); break;
+    case PendingAction::ForceInvertWASD:        Dev_ForceEffect(EffectType::InvertWASD); break;
+    case PendingAction::ForceInvertMouse:       Dev_ForceEffect(EffectType::InvertMouse); break;
+    case PendingAction::ForceFpsLow:            Dev_ForceEffect(EffectType::FpsLow); break;
+    case PendingAction::ForceSensitivityDisable:Dev_ForceEffect(EffectType::DisableSensitivity); break;
+    case PendingAction::ForceSensitivityHigh:   Dev_ForceEffect(EffectType::SensitivityHigh); break;
+    
+    // Roulette preview
+    case PendingAction::PreviewRoulette:        Dev_StartPreviewRoulette(); break;
+    case PendingAction::StopPreviewRoulette:    Dev_StopPreviewRoulette(); break;
+    
+    default:
+        break;
     }
 
+    // Очищаем действие после выполнения
     g_pendingAction = PendingAction::None;
 }
 
-// --------------------
-// Window procedure
-// --------------------
-LRESULT CALLBACK ControlWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+// ============================================================================
+// WINDOW PROCEDURE
+// ============================================================================
 
+/**
+ * @brief Message handler для окна контроля
+ */
+LRESULT CALLBACK ControlWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
 
-    case WM_COMMAND:
-    {
-        // если уже есть ожидающее действие — игнор
+    case WM_COMMAND: {
+        // Игнорируем клик, если уже есть ожидающее действие
+        // (это предотвращает спам)
         if (g_pendingAction != PendingAction::None)
             return 0;
 
+        // Определяем какую кнопку нажали и устанавливаем соответствующее действие
         switch (LOWORD(wParam)) {
-
-        case BTN_START_SYSTEM:   g_pendingAction = PendingAction::StartSystem; break;
-        case BTN_STOP_SYSTEM:    g_pendingAction = PendingAction::StopSystem; break;
-        case BTN_FORCE_ROULETTE: g_pendingAction = PendingAction::ForceRoulette; break;
-        case BTN_STOP_EFFECT:    g_pendingAction = PendingAction::StopEffect; break;
-
-        case BTN_ERASE:          g_pendingAction = PendingAction::ForceErase; break;
-        case BTN_BLUR:           g_pendingAction = PendingAction::ForceBlur; break;
-        case BTN_HALF:           g_pendingAction = PendingAction::ForceHalf; break;
-        case BTN_INVERT_WASD:    g_pendingAction = PendingAction::ForceInvertWASD; break;
-        case BTN_INVERT_MOUSE:   g_pendingAction = PendingAction::ForceInvertMouse; break;
-        case BTN_LOW_FPS:        g_pendingAction = PendingAction::ForceFpsLow; break;
-        case BTN_PREVIEW_ROULETTE:g_pendingAction = PendingAction::PreviewRoulette;  break;
-        case BTN_STOP_PREVIEW: g_pendingAction = PendingAction::StopPreviewRoulette; break;
-
+        // System control buttons
+        case BTN_START_SYSTEM:          g_pendingAction = PendingAction::StartSystem; break;
+        case BTN_STOP_SYSTEM:           g_pendingAction = PendingAction::StopSystem; break;
+        
+        // Roulette control buttons
+        case BTN_FORCE_ROULETTE:        g_pendingAction = PendingAction::ForceRoulette; break;
+        case BTN_STOP_EFFECT:           g_pendingAction = PendingAction::StopEffect; break;
+        
+        // Individual effect buttons
+        case BTN_ERASE:                 g_pendingAction = PendingAction::ForceErase; break;
+        case BTN_BLUR:                  g_pendingAction = PendingAction::ForceBlur; break;
+        case BTN_HALF_SCREEN:           g_pendingAction = PendingAction::ForceHalf; break;
+        case BTN_INVERT_WASD:           g_pendingAction = PendingAction::ForceInvertWASD; break;
+        case BTN_INVERT_MOUSE:          g_pendingAction = PendingAction::ForceInvertMouse; break;
+        case BTN_LOW_FPS:               g_pendingAction = PendingAction::ForceFpsLow; break;
+        case BTN_DISABLE_SENSITIVITY:   g_pendingAction = PendingAction::ForceSensitivityDisable; break;
+        case BTN_HIGH_SENSITIVITY:      g_pendingAction = PendingAction::ForceSensitivityHigh; break;
+        
+        // Roulette preview buttons
+        case BTN_PREVIEW_ROULETTE:      g_pendingAction = PendingAction::PreviewRoulette; break;
+        case BTN_STOP_PREVIEW:          g_pendingAction = PendingAction::StopPreviewRoulette; break;
 
         default:
             return 0;
         }
 
-        // стартуем таймер
-        SetTimer(hwnd, DELAY_TIMER_ID, ACTION_DELAY_MS, nullptr);
+        // Стартуем таймер - действие выполнится после задержки
+        SetTimer(hwnd, TimerId::TIMER_DELAY, ACTION_DELAY_MS, nullptr);
         return 0;
     }
 
     case WM_TIMER:
-        if (wParam == DELAY_TIMER_ID) {
-            KillTimer(hwnd, DELAY_TIMER_ID);
+        if (wParam == TimerId::TIMER_DELAY) {
+            KillTimer(hwnd, TimerId::TIMER_DELAY);
             ExecutePendingAction();
         }
         return 0;
@@ -132,86 +129,149 @@ LRESULT CALLBACK ControlWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
     case WM_CLOSE:
         DestroyWindow(hwnd);
         return 0;
-    }
 
-    return DefWindowProc(hwnd, msg, wParam, lParam);
+    default:
+        return DefWindowProc(hwnd, msg, wParam, lParam);
+    }
 }
 
-// --------------------
-// Create control window
-// --------------------
-bool CreateControlWindow(HINSTANCE hInstance) {
+// ============================================================================
+// WINDOW CREATION & BUTTON LAYOUT
+// ============================================================================
 
+/**
+ * @brief Вспомогательная функция для создания кнопки
+ * @param hInstance Handle приложения
+ * @param parent Handle родительского окна
+ * @param text Текст на кнопке
+ * @param id ID кнопки
+ * @param x X координата
+ * @param y Y координата
+ * @param width Ширина кнопки
+ * @param height Высота кнопки
+ */
+static inline HWND CreateButton(
+    HINSTANCE hInstance,
+    HWND parent,
+    const wchar_t* text,
+    int id,
+    int x, int y,
+    int width, int height
+) {
+    return CreateWindow(
+        L"BUTTON", text,
+        WS_CHILD | WS_VISIBLE,
+        x, y, width, height,
+        parent,
+        (HMENU)(intptr_t)id,
+        hInstance,
+        nullptr
+    );
+}
+
+bool CreateControlWindow(HINSTANCE hInstance) {
+    // Регистрируем класс окна
     WNDCLASS wc{};
     wc.lpfnWndProc = ControlWndProc;
     wc.hInstance = hInstance;
-    wc.lpszClassName = L"DX_CONTROL";
+    wc.lpszClassName = CONTROL_CLASS_NAME;
 
     RegisterClass(&wc);
 
+    // Создаем главное окно контроля
     g_hwndControl = CreateWindow(
-        wc.lpszClassName,
-        L"Chaos Controller (DEV)",
+        CONTROL_CLASS_NAME,
+        CONTROL_WINDOW_TITLE,
         WS_OVERLAPPED | WS_SYSMENU | WS_MINIMIZEBOX,
-        200, 200, 420, 360,
+        CONTROL_WINDOW_X,
+        CONTROL_WINDOW_Y,
+        CONTROL_WINDOW_WIDTH,
+        CONTROL_WINDOW_HEIGHT,
         nullptr, nullptr, hInstance, nullptr
     );
 
-    // --- SYSTEM ---
-    CreateWindow(L"BUTTON", L"START SYSTEM", WS_CHILD | WS_VISIBLE,
-        20, 20, 160, 30, g_hwndControl, (HMENU)BTN_START_SYSTEM, hInstance, nullptr);
+    if (!g_hwndControl)
+        return false;
 
-    CreateWindow(L"BUTTON", L"STOP SYSTEM", WS_CHILD | WS_VISIBLE,
-        200, 20, 160, 30, g_hwndControl, (HMENU)BTN_STOP_SYSTEM, hInstance, nullptr);
+    // =====================================================================
+    // SYSTEM CONTROL BUTTONS
+    // =====================================================================
+    
+    CreateButton(hInstance, g_hwndControl, L"START SYSTEM", BTN_START_SYSTEM,
+        MARGIN_LEFT, MARGIN_TOP,
+        BUTTON_WIDTH, BUTTON_HEIGHT);
 
-    CreateWindow(L"BUTTON", L"FORCE ROULETTE (3s)", WS_CHILD | WS_VISIBLE,
-        20, 60, 160, 30, g_hwndControl, (HMENU)BTN_FORCE_ROULETTE, hInstance, nullptr);
+    CreateButton(hInstance, g_hwndControl, L"STOP SYSTEM", BTN_STOP_SYSTEM,
+        MARGIN_LEFT + COLUMN_SPACING_X, MARGIN_TOP,
+        BUTTON_WIDTH, BUTTON_HEIGHT);
 
-    CreateWindow(L"BUTTON", L"STOP EFFECT (3s)", WS_CHILD | WS_VISIBLE,
-        200, 60, 160, 30, g_hwndControl, (HMENU)BTN_STOP_EFFECT, hInstance, nullptr);
+    CreateButton(hInstance, g_hwndControl, L"FORCE ROULETTE", BTN_FORCE_ROULETTE,
+        MARGIN_LEFT, MARGIN_TOP + BUTTON_SPACING_Y,
+        BUTTON_WIDTH, BUTTON_HEIGHT);
 
-    // --- EFFECTS ---
-    int y = 110;
-    CreateWindow(L"BUTTON", L"ERASE", WS_CHILD | WS_VISIBLE,
-        20, y, 160, 28, g_hwndControl, (HMENU)BTN_ERASE, hInstance, nullptr);
+    CreateButton(hInstance, g_hwndControl, L"STOP EFFECT", BTN_STOP_EFFECT,
+        MARGIN_LEFT + COLUMN_SPACING_X, MARGIN_TOP + BUTTON_SPACING_Y,
+        BUTTON_WIDTH, BUTTON_HEIGHT);
 
-    CreateWindow(L"BUTTON", L"BLUR", WS_CHILD | WS_VISIBLE,
-        200, y, 160, 28, g_hwndControl, (HMENU)BTN_BLUR, hInstance, nullptr);
+    // =====================================================================
+    // INDIVIDUAL EFFECT BUTTONS
+    // =====================================================================
+    
+    int y = MARGIN_TOP + 100;
 
-    y += 34;
-    CreateWindow(L"BUTTON", L"HALF SCREEN", WS_CHILD | WS_VISIBLE,
-        20, y, 160, 28, g_hwndControl, (HMENU)BTN_HALF, hInstance, nullptr);
+    // Row 1: Erase, Blur
+    CreateButton(hInstance, g_hwndControl, L"ERASE", BTN_ERASE,
+        MARGIN_LEFT, y,
+        BUTTON_WIDTH, BUTTON_HEIGHT);
 
-    CreateWindow(L"BUTTON", L"INVERT WASD", WS_CHILD | WS_VISIBLE,
-        200, y, 160, 28, g_hwndControl, (HMENU)BTN_INVERT_WASD, hInstance, nullptr);
+    CreateButton(hInstance, g_hwndControl, L"BLUR", BTN_BLUR,
+        MARGIN_LEFT + COLUMN_SPACING_X, y,
+        BUTTON_WIDTH, BUTTON_HEIGHT);
 
-    y += 34;
-    CreateWindow(L"BUTTON", L"INVERT MOUSE", WS_CHILD | WS_VISIBLE,
-        20, y, 160, 28, g_hwndControl, (HMENU)BTN_INVERT_MOUSE, hInstance, nullptr);
+    // Row 2: Half Screen, Invert WASD
+    y += BUTTON_SPACING_Y;
+    CreateButton(hInstance, g_hwndControl, L"HALF SCREEN", BTN_HALF_SCREEN,
+        MARGIN_LEFT, y,
+        BUTTON_WIDTH, BUTTON_HEIGHT);
 
-    CreateWindow(L"BUTTON", L"FPS LOW", WS_CHILD | WS_VISIBLE,
-        200, y, 160, 28, g_hwndControl, (HMENU)BTN_LOW_FPS, hInstance, nullptr);
+    CreateButton(hInstance, g_hwndControl, L"INVERT WASD", BTN_INVERT_WASD,
+        MARGIN_LEFT + COLUMN_SPACING_X, y,
+        BUTTON_WIDTH, BUTTON_HEIGHT);
 
-    // --- PREVIEW ---
-    CreateWindow(
-        L"BUTTON", L"PREVIEW ROULETTE",
-        WS_CHILD | WS_VISIBLE,
-        20, y + 40, 160, 30,
-        g_hwndControl,
-        (HMENU)BTN_PREVIEW_ROULETTE,
-        hInstance, nullptr
-    );
+    // Row 3: Invert Mouse, FPS Low
+    y += BUTTON_SPACING_Y;
+    CreateButton(hInstance, g_hwndControl, L"INVERT MOUSE", BTN_INVERT_MOUSE,
+        MARGIN_LEFT, y,
+        BUTTON_WIDTH, BUTTON_HEIGHT);
 
-    CreateWindow(
-        L"BUTTON", L"STOP PREVIEW",
-        WS_CHILD | WS_VISIBLE,
-        200, y + 40, 160, 30,
-        g_hwndControl,
-        (HMENU)BTN_STOP_PREVIEW,
-        hInstance, nullptr
-    );
+    CreateButton(hInstance, g_hwndControl, L"FPS LOW", BTN_LOW_FPS,
+        MARGIN_LEFT + COLUMN_SPACING_X, y,
+        BUTTON_WIDTH, BUTTON_HEIGHT);
 
+    // Row 4: Disable Sens, High Sens
+    y += BUTTON_SPACING_Y;
+    CreateButton(hInstance, g_hwndControl, L"NO SENS", BTN_DISABLE_SENSITIVITY,
+        MARGIN_LEFT, y,
+        BUTTON_WIDTH, BUTTON_HEIGHT);
 
+    CreateButton(hInstance, g_hwndControl, L"HIGH SENS", BTN_HIGH_SENSITIVITY,
+        MARGIN_LEFT + COLUMN_SPACING_X, y,
+        BUTTON_WIDTH, BUTTON_HEIGHT);
+
+    // =====================================================================
+    // ROULETTE PREVIEW BUTTONS
+    // =====================================================================
+    
+    y += BUTTON_SPACING_Y + 10;
+    CreateButton(hInstance, g_hwndControl, L"PREVIEW ROULETTE", BTN_PREVIEW_ROULETTE,
+        MARGIN_LEFT, y,
+        BUTTON_WIDTH, BUTTON_HEIGHT);
+
+    CreateButton(hInstance, g_hwndControl, L"STOP PREVIEW", BTN_STOP_PREVIEW,
+        MARGIN_LEFT + COLUMN_SPACING_X, y,
+        BUTTON_WIDTH, BUTTON_HEIGHT);
+
+    // Показываем окно
     ShowWindow(g_hwndControl, SW_SHOW);
     return true;
 }

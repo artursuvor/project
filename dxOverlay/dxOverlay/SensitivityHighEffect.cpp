@@ -1,13 +1,23 @@
-﻿#include "SensitivityHighEffect.h"
-#include "InputSequencer.h"
+﻿/**
+ * @file SensitivityHighEffect.cpp
+ * @brief Эффект максимальной чувствительности мыши
+ * 
+ * Использует консоль игры для установки sensitivity = 7.0
+ */
 
-// ⚠️ должно совпадать с тем, что реально стоит в игре
-static const wchar_t* ORIGINAL_SENSITIVITY = L"sensitivity 0.2";
+#include "SensitivityHighEffect.h"
+#include "InputSequencer.h"
+#include "Config.h"
+
+// ============================================================================
+// EFFECT IMPLEMENTATION
+// ============================================================================
 
 void StartSensitivityHighEffect() {
+    // Отправляем команду максимальной чувствительности
+    SetClipboardText(SENSITIVITY_HIGH_CMD);
 
-    SetClipboardText(L"sensitivity 7.0");
-
+    // Открываем консоль, вставляем и выполняем команду
     PressF7();
     PressCtrlV();
     PressEnter();
@@ -15,8 +25,8 @@ void StartSensitivityHighEffect() {
 }
 
 void StopSensitivityHighEffect() {
-
-    SetClipboardText(ORIGINAL_SENSITIVITY);
+    // Восстанавливаем нормальное значение
+    SetClipboardText(SENSITIVITY_NORMAL_CMD);
 
     PressF7();
     PressCtrlV();

@@ -1,29 +1,32 @@
-﻿#include "SensitivityEffect.h"
-#include "InputSequencer.h"
+﻿/**
+ * @file SensitivityEffect.cpp
+ * @brief Эффект отключения чувствительности мыши
+ * 
+ * Использует консоль игры для установки sensitivity = 0.0
+ */
 
-// Значение, к которому возвращаемся
-static const wchar_t* ORIGINAL_SENSITIVITY = L"sensitivity 0.2";
+#include "SensitivityEffect.h"
+#include "InputSequencer.h"
+#include "Config.h"
+
+// ============================================================================
+// EFFECT IMPLEMENTATION
+// ============================================================================
 
 void StartSensitivityEffect() {
-    // кладём команду в буфер
-    SetClipboardText(L"sensitivity 0.0");
+    // Отправляем команду в буфер обмена
+    SetClipboardText(SENSITIVITY_DISABLE_CMD);
 
-    // открыть консоль
+    // Открываем консоль, вставляем и выполняем команду
     PressF7();
-
-    // вставить команду
     PressCtrlV();
-
-    // подтвердить
     PressEnter();
-
-    // закрыть консоль
     PressF7();
 }
 
 void StopSensitivityEffect() {
-    // вернуть старое значение
-    SetClipboardText(L"sensitivity 0.2");
+    // Восстанавливаем оригинальное значение через консоль
+    SetClipboardText(SENSITIVITY_NORMAL_CMD);
 
     PressF7();
     PressCtrlV();

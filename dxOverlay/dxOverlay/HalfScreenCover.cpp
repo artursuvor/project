@@ -1,38 +1,41 @@
-﻿#include "HalfScreenCover.h"
+﻿/**
+ * @file HalfScreenCover.cpp
+ * @brief Эффект закрытия половины экрана
+ * 
+ * Блокирует видимость половины экрана черным оверлеем
+ */
+
+#include "HalfScreenCover.h"
 #include "EffectSystem.h"
+#include "Config.h"
 #include <Windows.h>
 
-static const COLORREF TRANSPARENT_COLOR = RGB(255, 0, 255);
+// ============================================================================
+// EFFECT IMPLEMENTATION
+// ============================================================================
 
 bool HandleHalfScreenCover(HWND hwnd, UINT msg) {
-
+    // Проверяем, что эффект HalfScreenCover активен
     if (GetCurrentEffect() != EffectType::HalfScreenCover)
         return false;
 
     if (msg == WM_PAINT) {
-
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hwnd, &ps);
 
-        int screenW = GetSystemMetrics(SM_CXSCREEN);
-        int screenH = GetSystemMetrics(SM_CYSCREEN);
+        int screenWidth = GetSystemMetrics(SM_CXSCREEN);
+        int screenHeight = GetSystemMetrics(SM_CYSCREEN);
 
-        // 1️⃣ Заливаем весь экран прозрачным цветом
-        HBRUSH clearBrush = CreateSolidBrush(TRANSPARENT_COLOR);
-        RECT full{ 0, 0, screenW, screenH };
-        FillRect(hdc, &full, clearBrush);
-        DeleteObject(clearBrush);
+        // Сначала заливаем весь экран прозрачным цветом
+        HBRUSH transparentBrush = CreateSolidBrush(TRANSPARENT_COLOR);
+        RECT fullScreen{ 0, 0, screenWidth, screenHeight };
+        FillRect(hdc, &fullScreen, transparentBrush);
+        DeleteObject(transparentBrush);
 
-        // 2️⃣ Чёрная половина экрана
-        RECT halfRect{
-            0,
-            0,
-            screenW / 2,
-            screenH
-        };
-
+        // Потом закрываем левую половину черной краской
         HBRUSH blackBrush = CreateSolidBrush(RGB(0, 0, 0));
-        FillRect(hdc, &halfRect, blackBrush);
+        RECT leftHalf{ 0, 0, screenWidth / 2, screenHeight };
+        FillRect(hdc, &leftHalf, blackBrush);
         DeleteObject(blackBrush);
 
         EndPaint(hwnd, &ps);
@@ -43,5 +46,5 @@ bool HandleHalfScreenCover(HWND hwnd, UINT msg) {
 }
 
 void ResetHalfScreenCover() {
-    // тут ничего не нужно — очистка делается в StopEffect()
+    // Очистка делается автоматически в StopEffect()
 }

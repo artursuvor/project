@@ -1,24 +1,32 @@
-﻿#include "FpsEffect.h"
-#include "InputSequencer.h"
+﻿/**
+ * @file FpsEffect.cpp
+ * @brief Эффект понижения FPS в игре
+ * 
+ * Использует консоль игры для установки fps_max = 16
+ */
 
-// что считаем "нормой"
-static const wchar_t* FPS_NORMAL = L"fps_max 128";
+#include "FpsEffect.h"
+#include "InputSequencer.h"
+#include "Config.h"
+
+// ============================================================================
+// EFFECT IMPLEMENTATION
+// ============================================================================
 
 void StartFpsLowEffect() {
+    // Отправляем команду понижения FPS в буфер обмена
+    SetClipboardText(FPS_LOW_CMD);
 
-    // ставим низкий FPS
-    SetClipboardText(L"fps_max 16");
-
-    PressF7();      // открыть консоль
-    PressCtrlV();   // вставить
-    PressEnter();   // выполнить
-    PressF7();      // закрыть
+    // Открываем консоль, вставляем и выполняем команду
+    PressF7();
+    PressCtrlV();
+    PressEnter();
+    PressF7();
 }
 
 void StopFpsLowEffect() {
-
-    // возвращаем нормальный FPS
-    SetClipboardText(FPS_NORMAL);
+    // Восстанавливаем нормальный FPS
+    SetClipboardText(FPS_NORMAL_CMD);
 
     PressF7();
     PressCtrlV();

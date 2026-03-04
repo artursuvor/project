@@ -1,8 +1,19 @@
-﻿#include "EffectSystem.h"
+﻿/**
+ * @file EffectSystem.cpp
+ * @brief Реализация системы управления эффектами
+ * 
+ * Основной модуль приложения, который:
+ * 1. Управляет переходами между состояниями
+ * 2. Контролирует тайминги для рулетки и эффектов
+ * 3. Инициализирует/останавливает нужные эффекты
+ */
+
+#include "EffectSystem.h"
+#include "Config.h"
 #include <cstdlib>
 #include <ctime>
 
-// === effects ===
+// === Effect headers ===
 #include "SensitivityEffect.h"
 #include "SensitivityHighEffect.h"
 #include "InvertWASDEffect.h"
@@ -13,56 +24,93 @@
 #include "FpsEffect.h"
 #include "Window.h"
 
-// ======================================================
+// ============================================================================
 // GLOBAL STATE
-// ======================================================
+// ============================================================================
 
+/** Окно оверлея для отрисовки эффектов */
 static HWND g_overlay = nullptr;
 
+/** Текущее состояние системы */
 static SystemState g_state = SystemState::Off;
-static EffectType  g_currentEffect = EffectType::None;
 
-// тайминги
-static DWORD g_stateStartTime = 0; // для Waiting / Rolling
-static DWORD g_effectStartTime = 0; // для Effect
+/** Тип активного эффекта */
+static EffectType g_currentEffect = EffectType::None;
+
+/** Время начала текущего состояния (для Waiting / Rolling) */
+static DWORD g_stateStartTime = 0;
+
+/** Время начала активного эффекта */
+static DWORD g_effectStartTime = 0;
+
+/** Длительность текущего эффекта в миллисекундах */
 static DWORD g_effectDuration = 0;
 
-static const DWORD ROULETTE_INTERVAL = 45000; // 60 сек ожидание
-static const DWORD ROLLING_DURATION = 5000;  // 5 сек рулетка
+/** Флаг превью рулетки (без активации эффекта) */
+static bool g_previewRoulette = false;
 
-// ======================================================
-// INTERNAL
-// ======================================================
+// ============================================================================
+// ROULETTE VISUAL STATE
+// ============================================================================
+
+/** Состояние визуализации рулетки */
+static RouletteVisualState g_visualState = RouletteVisualState::Hidden;
+
+/** Время начала текущего визуального состояния рулетки */
+static DWORD g_visualStateStart = 0;
+
+/** Альфа-канал для затухания (0-255) */
+static BYTE g_fadeAlpha = 255;
+
+/** Финальный выбранный индекс рулетки */
+static int g_finalIndex = -1;
+
+// ============================================================================
+// FORWARD DECLARATIONS
+// ============================================================================
 
 static void StartRandomEffect();
 static void StopInternalEffect();
+static void ActivateEffect(EffectType type);
 
+
+// ============================================================================
+// EFFECT DURATIONS MAPPING
+// ============================================================================
+
+/**
+ * @brief Получить длительность эффекта в миллисекундах
+ * @param type Тип эффекта
+ * @return Длительность в ms или 0 если неизвестный тип
+ */
 static DWORD GetEffectDuration(EffectType type) {
     switch (type) {
-    case EffectType::Erase:              return 30000;
-    case EffectType::Blur:               return 20000;
-    case EffectType::HalfScreenCover:    return 30000;
-    case EffectType::DisableSensitivity: return 10000;
-    case EffectType::SensitivityHigh:    return 15000;
-    case EffectType::InvertWASD:          return 35000;
-    case EffectType::InvertMouse:         return 35000;
-    case EffectType::FpsLow:              return 15000;
+    case EffectType::Erase:              return EFFECT_DURATION_ERASE_MS;
+    case EffectType::Blur:               return EFFECT_DURATION_BLUR_MS;
+    case EffectType::HalfScreenCover:    return EFFECT_DURATION_HALF_SCREEN_MS;
+    case EffectType::DisableSensitivity: return EFFECT_DURATION_DISABLE_SENSITIVITY_MS;
+    case EffectType::SensitivityHigh:    return EFFECT_DURATION_HIGH_SENSITIVITY_MS;
+    case EffectType::InvertWASD:         return EFFECT_DURATION_INVERT_WASD_MS;
+    case EffectType::InvertMouse:        return EFFECT_DURATION_INVERT_MOUSE_MS;
+    case EffectType::FpsLow:             return EFFECT_DURATION_LOW_FPS_MS;
     default:                             return 0;
     }
 }
 
-// ======================================================
-// INIT
-// ======================================================
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
 
 void InitEffectSystem(HWND overlayHwnd) {
     g_overlay = overlayHwnd;
     srand((unsigned)time(nullptr));
+    g_state = SystemState::Off;
+    g_currentEffect = EffectType::None;
 }
 
-// ======================================================
-// CONTROL
-// ======================================================
+// ============================================================================
+// SYSTEM CONTROL
+// ============================================================================
 
 void StartSystem() {
     StopInternalEffect();
@@ -75,9 +123,9 @@ void StopSystem() {
     g_state = SystemState::Off;
 }
 
-// ======================================================
-// STATE ACCESS
-// ======================================================
+// ============================================================================
+// STATE QUERIES
+// ============================================================================
 
 SystemState GetSystemState() {
     return g_state;
@@ -91,64 +139,117 @@ bool IsEffectAlive() {
     return g_state == SystemState::Effect;
 }
 
-// ======================================================
-// UPDATE (ЕДИНСТВЕННЫЙ МОЗГ)
-// ======================================================
+DWORD GetEffectRemainingTime() {
+    if (g_state != SystemState::Effect)
+        return 0;
 
+    DWORD elapsed = GetTickCount() - g_effectStartTime;
+    if (elapsed >= g_effectDuration)
+        return 0;
+
+    return g_effectDuration - elapsed;
+}
+
+// ============================================================================
+// ROULETTE STATE QUERIES
+// ============================================================================
+
+RouletteVisualState GetRouletteVisualState() {
+    return g_visualState;
+}
+
+int GetRouletteCurrentIndex() {
+    // TODO: вычислить текущий индекс на основе g_visualStateStart
+    return 0;
+}
+
+int GetRouletteFinalIndex() {
+    return g_finalIndex;
+}
+
+BYTE GetRouletteFadeAlpha() {
+    return g_fadeAlpha;
+}
+
+// ============================================================================
+// UPDATE LOGIC (MAIN STATE MACHINE)
+// ============================================================================
+
+/**
+ * @brief Главный update цикла - управляет переходами между состояниями
+ * 
+ * Состояния:
+ * - Off: ничего не делаем
+ * - Waiting: ждем ROULETTE_WAIT_TIME_MS перед запуском рулетки
+ * - Rolling: рулетка вращается ROULETTE_SPIN_DURATION_MS
+ * - Effect: активный эффект работает GetEffectDuration(type) миллисекунд
+ */
 void UpdateEffectSystem() {
-    DWORD now = GetTickCount();
-
     if (g_state == SystemState::Off)
         return;
 
-    // -------------------------
-    // EFFECT ACTIVE
-    // -------------------------
-    if (g_state == SystemState::Effect) {
+    DWORD now = GetTickCount();
 
+    // =========================================
+    // EFFECT STATE: контролируем длительность
+    // =========================================
+    if (g_state == SystemState::Effect) {
         if (now - g_effectStartTime >= g_effectDuration) {
             StopInternalEffect();
             g_state = SystemState::Waiting;
             g_stateStartTime = now;
         }
-
-        return; // 🔥 НИЧЕГО БОЛЬШЕ НЕ ДЕЛАЕМ
-    }
-
-    // -------------------------
-    // WAITING → ROLLING
-    // -------------------------
-    if (g_state == SystemState::Waiting &&
-        now - g_stateStartTime >= (ROULETTE_INTERVAL - ROLLING_DURATION))
-    {
-        g_state = SystemState::Rolling;
-        g_stateStartTime = now;
-
-        ShowWindow(g_overlay, SW_SHOWNA);          // 👈 ВАЖНО
-        SetOverlayMousePassThrough(g_overlay, true);
-
         return;
     }
 
-    // -------------------------
-    // ROLLING → EFFECT
-    // -------------------------
-    if (g_state == SystemState::Rolling &&
-        now - g_stateStartTime >= ROLLING_DURATION)
-    {
-        StartRandomEffect();
+    // =========================================
+    // WAITING → ROLLING: запустить рулетку
+    // =========================================
+    if (g_state == SystemState::Waiting) {
+        DWORD timeUntilRolling = ROULETTE_WAIT_TIME_MS - ROULETTE_SPIN_DURATION_MS;
+        
+        if (now - g_stateStartTime >= timeUntilRolling) {
+            g_state = SystemState::Rolling;
+            g_stateStartTime = now;
+            
+            // Показываем окно оверлея для визуализации рулетки
+            ShowWindow(g_overlay, SW_SHOWNA);
+            SetOverlayMousePassThrough(g_overlay, true);
+            g_visualState = RouletteVisualState::Spinning;
+            g_visualStateStart = now;
+        }
+        return;
+    }
+
+    // =========================================
+    // ROLLING → EFFECT: выбрать эффект
+    // =========================================
+    if (g_state == SystemState::Rolling) {
+        if (now - g_stateStartTime >= ROULETTE_SPIN_DURATION_MS) {
+            if (!g_previewRoulette) {
+                StartRandomEffect();
+            } else {
+                // В режиме превью просто скрываем рулетку
+                g_state = SystemState::Off;
+                ShowWindow(g_overlay, SW_HIDE);
+            }
+        }
         return;
     }
 }
 
-// ======================================================
-// EFFECT CONTROL (INTERNAL)
-// ======================================================
+// ============================================================================
+// EFFECT EXECUTION
+// ============================================================================
 
+/**
+ * @brief Запустить случайный эффект из пула доступных
+ */
 static void StartRandomEffect() {
     StopInternalEffect();
 
-    static EffectType pool[] = {
+    // Пул доступных эффектов (исключаем None)
+    static const EffectType EFFECT_POOL[] = {
         EffectType::Erase,
         EffectType::DisableSensitivity,
         EffectType::SensitivityHigh,
@@ -159,53 +260,70 @@ static void StartRandomEffect() {
         EffectType::FpsLow
     };
 
-    int index = rand() % (sizeof(pool) / sizeof(pool[0]));
-    g_currentEffect = pool[index];
+    constexpr int POOL_SIZE = sizeof(EFFECT_POOL) / sizeof(EFFECT_POOL[0]);
+    int randomIndex = rand() % POOL_SIZE;
+    g_finalIndex = randomIndex;
 
+    ActivateEffect(EFFECT_POOL[randomIndex]);
+}
+
+/**
+ * @brief Внутренняя функция активации эффекта
+ */
+static void ActivateEffect(EffectType type) {
+    g_currentEffect = type;
     g_effectStartTime = GetTickCount();
-    g_effectDuration = GetEffectDuration(g_currentEffect);
+    g_effectDuration = GetEffectDuration(type);
     g_state = SystemState::Effect;
+    g_visualState = RouletteVisualState::Hidden;
 
     HWND hwnd = g_overlay;
 
+    // Показываем окно и устанавливаем режим отрисовки
     ShowWindow(hwnd, SW_SHOWNA);
     SetOverlayColorkey(hwnd);
 
-    bool passThrough = true;
-    if (g_currentEffect == EffectType::Erase ||
-        g_currentEffect == EffectType::HalfScreenCover)
-        passThrough = false;
+    // Определяем, нужна ли обработка мыши/клавиатуры
+    bool needsInputCapture = (type == EffectType::Erase || 
+                              type == EffectType::HalfScreenCover);
+    SetOverlayMousePassThrough(hwnd, !needsInputCapture);
 
-    SetOverlayMousePassThrough(hwnd, passThrough);
-
-    switch (g_currentEffect) {
+    // Инициализируем конкретный эффект
+    switch (type) {
     case EffectType::Blur:                StartBlurEffect(hwnd); break;
     case EffectType::DisableSensitivity:  StartSensitivityEffect(); break;
     case EffectType::SensitivityHigh:     StartSensitivityHighEffect(); break;
-    case EffectType::InvertWASD:           StartInvertWASD(); break;
-    case EffectType::InvertMouse:          StartInvertMouseEffect(); break;
-    case EffectType::FpsLow:               StartFpsLowEffect(); break;
-    case EffectType::Erase:
-    case EffectType::HalfScreenCover:
-        break;
+    case EffectType::InvertWASD:          StartInvertWASD(); break;
+    case EffectType::InvertMouse:         StartInvertMouseEffect(); break;
+    case EffectType::FpsLow:              StartFpsLowEffect(); break;
+    case EffectType::Erase:               break;  // Инициализация в DrawErase
+    case EffectType::HalfScreenCover:     break;  // Инициализация в DrawHalfScreen
     default:
         break;
     }
 }
 
+/**
+ * @brief Остановить текущий активный эффект
+ */
 static void StopInternalEffect() {
+    if (g_currentEffect == EffectType::None)
+        return;
+
     HWND hwnd = g_overlay;
 
+    // Останавливаем конкретный эффект
     switch (g_currentEffect) {
     case EffectType::DisableSensitivity: StopSensitivityEffect(); break;
     case EffectType::SensitivityHigh:    StopSensitivityHighEffect(); break;
-    case EffectType::InvertWASD:          StopInvertWASD(); break;
-    case EffectType::InvertMouse:         StopInvertMouseEffect(); break;
-    case EffectType::Erase:               ResetErase(hwnd); break;
-    case EffectType::HalfScreenCover:     ResetHalfScreenCover(); break;
-    case EffectType::Blur:                StopBlurEffect(hwnd); break;
-    case EffectType::FpsLow:              StopFpsLowEffect(); break;
-    default: break;
+    case EffectType::InvertWASD:         StopInvertWASD(); break;
+    case EffectType::InvertMouse:        StopInvertMouseEffect(); break;
+    case EffectType::Erase:              ResetErase(hwnd); break;
+    case EffectType::HalfScreenCover:    ResetHalfScreenCover(); break;
+    case EffectType::Blur:               StopBlurEffect(hwnd); break;
+    case EffectType::FpsLow:             StopFpsLowEffect(); break;
+    default:
+        break;
     }
 
     g_currentEffect = EffectType::None;
@@ -213,9 +331,9 @@ static void StopInternalEffect() {
     SetOverlayMousePassThrough(hwnd, true);
 }
 
-// ======================================================
+// ============================================================================
 // DEV / DEBUG API
-// ======================================================
+// ============================================================================
 
 void Dev_StopEffect() {
     StopInternalEffect();
@@ -224,46 +342,20 @@ void Dev_StopEffect() {
 }
 
 void Dev_ForceEffect(EffectType type) {
+    if (type == EffectType::None)
+        return;
+
     StopInternalEffect();
-
-    g_currentEffect = type;
-    g_effectStartTime = GetTickCount();
-    g_effectDuration = GetEffectDuration(type);
-    g_state = SystemState::Effect;
-
-    HWND hwnd = g_overlay;
-
-    ShowWindow(hwnd, SW_SHOWNA);
-    SetOverlayColorkey(hwnd);
-
-    bool passThrough = true;
-    if (type == EffectType::Erase || type == EffectType::HalfScreenCover)
-        passThrough = false;
-
-    SetOverlayMousePassThrough(hwnd, passThrough);
-
-    switch (type) {
-    case EffectType::Blur:                StartBlurEffect(hwnd); break;
-    case EffectType::DisableSensitivity:  StartSensitivityEffect(); break;
-    case EffectType::SensitivityHigh:     StartSensitivityHighEffect(); break;
-    case EffectType::InvertWASD:           StartInvertWASD(); break;
-    case EffectType::InvertMouse:          StartInvertMouseEffect(); break;
-    case EffectType::FpsLow:               StartFpsLowEffect(); break;
-    case EffectType::Erase:
-    case EffectType::HalfScreenCover:
-        break;
-    default:
-        break;
-    }
+    ActivateEffect(type);
 }
 
 void Dev_ForceRoulette() {
     StopInternalEffect();
     g_state = SystemState::Rolling;
     g_stateStartTime = GetTickCount();
+    g_visualState = RouletteVisualState::Spinning;
+    g_visualStateStart = GetTickCount();
 }
-
-static bool g_previewRoulette = false;
 
 void Dev_StartPreviewRoulette() {
     if (g_state != SystemState::Off)
@@ -272,11 +364,18 @@ void Dev_StartPreviewRoulette() {
     g_previewRoulette = true;
     g_state = SystemState::Rolling;
     g_stateStartTime = GetTickCount();
+    g_visualState = RouletteVisualState::Spinning;
+    g_visualStateStart = GetTickCount();
+    
+    ShowWindow(g_overlay, SW_SHOWNA);
+    SetOverlayMousePassThrough(g_overlay, true);
 }
 
 void Dev_StopPreviewRoulette() {
     g_previewRoulette = false;
     g_state = SystemState::Off;
+    g_visualState = RouletteVisualState::Hidden;
+    ShowWindow(g_overlay, SW_HIDE);
 }
 
 bool IsPreviewRoulette() {
