@@ -1,7 +1,7 @@
 ﻿/**
  * @file ControlWindow.cpp
  * @brief Реализация DEV панели управления
- * 
+ *
  * Предоставляет окно с кнопками для тестирования эффектов
  */
 
@@ -35,7 +35,7 @@ HWND GetControlWindow() {
 
 /**
  * @brief Выполнить запланированное действие
- * 
+ *
  * Вызывается из таймера после задержки ACTION_DELAY_MS
  */
 static void ExecutePendingAction() {
@@ -43,11 +43,11 @@ static void ExecutePendingAction() {
     // System control
     case PendingAction::StartSystem:            StartSystem(); break;
     case PendingAction::StopSystem:             StopSystem(); break;
-    
+
     // Roulette control
     case PendingAction::ForceRoulette:          Dev_ForceRoulette(); break;
     case PendingAction::StopEffect:             Dev_StopEffect(); break;
-    
+
     // Individual effects
     case PendingAction::ForceErase:             Dev_ForceEffect(EffectType::Erase); break;
     case PendingAction::ForceBlur:              Dev_ForceEffect(EffectType::Blur); break;
@@ -57,11 +57,11 @@ static void ExecutePendingAction() {
     case PendingAction::ForceFpsLow:            Dev_ForceEffect(EffectType::FpsLow); break;
     case PendingAction::ForceSensitivityDisable:Dev_ForceEffect(EffectType::DisableSensitivity); break;
     case PendingAction::ForceSensitivityHigh:   Dev_ForceEffect(EffectType::SensitivityHigh); break;
-    
+
     // Roulette preview
     case PendingAction::PreviewRoulette:        Dev_StartPreviewRoulette(); break;
     case PendingAction::StopPreviewRoulette:    Dev_StopPreviewRoulette(); break;
-    
+
     default:
         break;
     }
@@ -91,11 +91,11 @@ LRESULT CALLBACK ControlWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         // System control buttons
         case BTN_START_SYSTEM:          g_pendingAction = PendingAction::StartSystem; break;
         case BTN_STOP_SYSTEM:           g_pendingAction = PendingAction::StopSystem; break;
-        
+
         // Roulette control buttons
         case BTN_FORCE_ROULETTE:        g_pendingAction = PendingAction::ForceRoulette; break;
         case BTN_STOP_EFFECT:           g_pendingAction = PendingAction::StopEffect; break;
-        
+
         // Individual effect buttons
         case BTN_ERASE:                 g_pendingAction = PendingAction::ForceErase; break;
         case BTN_BLUR:                  g_pendingAction = PendingAction::ForceBlur; break;
@@ -105,7 +105,7 @@ LRESULT CALLBACK ControlWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         case BTN_LOW_FPS:               g_pendingAction = PendingAction::ForceFpsLow; break;
         case BTN_DISABLE_SENSITIVITY:   g_pendingAction = PendingAction::ForceSensitivityDisable; break;
         case BTN_HIGH_SENSITIVITY:      g_pendingAction = PendingAction::ForceSensitivityHigh; break;
-        
+
         // Roulette preview buttons
         case BTN_PREVIEW_ROULETTE:      g_pendingAction = PendingAction::PreviewRoulette; break;
         case BTN_STOP_PREVIEW:          g_pendingAction = PendingAction::StopPreviewRoulette; break;
@@ -196,7 +196,7 @@ bool CreateControlWindow(HINSTANCE hInstance) {
     // =====================================================================
     // SYSTEM CONTROL BUTTONS
     // =====================================================================
-    
+
     CreateButton(hInstance, g_hwndControl, L"START SYSTEM", BTN_START_SYSTEM,
         MARGIN_LEFT, MARGIN_TOP,
         BUTTON_WIDTH, BUTTON_HEIGHT);
@@ -216,7 +216,7 @@ bool CreateControlWindow(HINSTANCE hInstance) {
     // =====================================================================
     // INDIVIDUAL EFFECT BUTTONS
     // =====================================================================
-    
+
     int y = MARGIN_TOP + 100;
 
     // Row 1: Erase, Blur
@@ -261,7 +261,7 @@ bool CreateControlWindow(HINSTANCE hInstance) {
     // =====================================================================
     // ROULETTE PREVIEW BUTTONS
     // =====================================================================
-    
+
     y += BUTTON_SPACING_Y + 10;
     CreateButton(hInstance, g_hwndControl, L"PREVIEW ROULETTE", BTN_PREVIEW_ROULETTE,
         MARGIN_LEFT, y,

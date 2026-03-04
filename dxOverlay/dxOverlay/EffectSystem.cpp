@@ -1,7 +1,7 @@
 ﻿/**
  * @file EffectSystem.cpp
  * @brief Реализация системы управления эффектами
- * 
+ *
  * Основной модуль приложения, который:
  * 1. Управляет переходами между состояниями
  * 2. Контролирует тайминги для рулетки и эффектов
@@ -177,7 +177,7 @@ BYTE GetRouletteFadeAlpha() {
 
 /**
  * @brief Главный update цикла - управляет переходами между состояниями
- * 
+ *
  * Состояния:
  * - Off: ничего не делаем
  * - Waiting: ждем ROULETTE_WAIT_TIME_MS перед запуском рулетки
@@ -207,11 +207,11 @@ void UpdateEffectSystem() {
     // =========================================
     if (g_state == SystemState::Waiting) {
         DWORD timeUntilRolling = ROULETTE_WAIT_TIME_MS - ROULETTE_SPIN_DURATION_MS;
-        
+
         if (now - g_stateStartTime >= timeUntilRolling) {
             g_state = SystemState::Rolling;
             g_stateStartTime = now;
-            
+
             // Показываем окно оверлея для визуализации рулетки
             ShowWindow(g_overlay, SW_SHOWNA);
             SetOverlayMousePassThrough(g_overlay, true);
@@ -284,7 +284,7 @@ static void ActivateEffect(EffectType type) {
     SetOverlayColorkey(hwnd);
 
     // Определяем, нужна ли обработка мыши/клавиатуры
-    bool needsInputCapture = (type == EffectType::Erase || 
+    bool needsInputCapture = (type == EffectType::Erase ||
                               type == EffectType::HalfScreenCover);
     SetOverlayMousePassThrough(hwnd, !needsInputCapture);
 
@@ -366,7 +366,7 @@ void Dev_StartPreviewRoulette() {
     g_stateStartTime = GetTickCount();
     g_visualState = RouletteVisualState::Spinning;
     g_visualStateStart = GetTickCount();
-    
+
     ShowWindow(g_overlay, SW_SHOWNA);
     SetOverlayMousePassThrough(g_overlay, true);
 }

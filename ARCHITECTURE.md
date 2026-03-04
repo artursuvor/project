@@ -29,13 +29,13 @@ dxOverlay/
 
 ### Если нужно изменить...
 
-| Что? | Файл |
-|------|------|
-| **Тайминг рулетки** | `Config.h` → `ROULETTE_*_MS` |
-| **Длительность эффекта** | `Config.h` → `EFFECT_DURATION_*_MS` |
-| **Команды консоли игры** | `Config.h` → `SENSITIVITY_*_CMD`, `FPS_*_CMD` |
-| **Логика эффектов** | `EffectSystem.cpp` → `StartRandomEffect()`, `ActivateEffect()` |
-| **Визуальные параметры** | `Config.h` → `BUTTON_*`, `MARGIN_*`, `ERASE_RADIUS_PX` |
+| Что?                      | Файл                                                                      |
+| ------------------------- | ------------------------------------------------------------------------- |
+| **Тайминг рулетки**       | `Config.h` → `ROULETTE_*_MS`                                              |
+| **Длительность эффекта**  | `Config.h` → `EFFECT_DURATION_*_MS`                                       |
+| **Команды консоли игры**  | `Config.h` → `SENSITIVITY_*_CMD`, `FPS_*_CMD`                             |
+| **Логика эффектов**       | `EffectSystem.cpp` → `StartRandomEffect()`, `ActivateEffect()`            |
+| **Визуальные параметры**  | `Config.h` → `BUTTON_*`, `MARGIN_*`, `ERASE_RADIUS_PX`                    |
 | **Добавить новый эффект** | `Types.h` (enum), `Config.h` (duration), `EffectSystem.cpp` (switch case) |
 
 ## 🎯 Основные функции
@@ -123,19 +123,20 @@ int main() {
 
 ## 🔍 Как найти что-то
 
-| Ищу... | Где искать |
-|--------|-----------|
-| Enum эффектов | `Types.h` → `enum class EffectType` |
-| Константу времени | `Config.h` → `constexpr DWORD ...` |
-| Логику выбора эффекта | `EffectSystem.cpp` → `StartRandomEffect()` |
-| Инициализацию эффекта | `EffectSystem.cpp` → `ActivateEffect()` switch |
-| Остановку эффекта | `EffectSystem.cpp` → `StopInternalEffect()` switch |
-| Кнопки UI | `ControlWindow.cpp` → `CreateButton()` calls |
-| Обработку кликов | `ControlWindow.cpp` → `ControlWndProc()` WM_COMMAND |
+| Ищу...                | Где искать                                          |
+| --------------------- | --------------------------------------------------- |
+| Enum эффектов         | `Types.h` → `enum class EffectType`                 |
+| Константу времени     | `Config.h` → `constexpr DWORD ...`                  |
+| Логику выбора эффекта | `EffectSystem.cpp` → `StartRandomEffect()`          |
+| Инициализацию эффекта | `EffectSystem.cpp` → `ActivateEffect()` switch      |
+| Остановку эффекта     | `EffectSystem.cpp` → `StopInternalEffect()` switch  |
+| Кнопки UI             | `ControlWindow.cpp` → `CreateButton()` calls        |
+| Обработку кликов      | `ControlWindow.cpp` → `ControlWndProc()` WM_COMMAND |
 
 ## 🚀 Быстрый старт для добавления нового эффекта
 
 1. **Создать файлы**
+
    ```cpp
    // NewEffect.h
    #pragma once
@@ -144,6 +145,7 @@ int main() {
    ```
 
 2. **Добавить в Types.h**
+
    ```cpp
    enum class EffectType {
        // ...
@@ -152,24 +154,26 @@ int main() {
    ```
 
 3. **Добавить в Config.h**
+
    ```cpp
    constexpr DWORD EFFECT_DURATION_NEW_EFFECT_MS = 20000;
    ```
 
 4. **Добавить в EffectSystem.cpp**
+
    ```cpp
    #include "NewEffect.h"
-   
+
    static DWORD GetEffectDuration(EffectType type) {
        // ...
        case EffectType::NewEffect: return EFFECT_DURATION_NEW_EFFECT_MS;
    }
-   
+
    static void ActivateEffect(EffectType type) {
        // ...
        case EffectType::NewEffect: break;  // инициализация если нужна
    }
-   
+
    static void StopInternalEffect() {
        // ...
        case EffectType::NewEffect: StopNewEffect(); break;
@@ -177,19 +181,21 @@ int main() {
    ```
 
 5. **Добавить кнопку в ControlWindow.cpp**
+
    ```cpp
    enum ControlWindowButtonId {
        BTN_NEW_EFFECT = 1208,  // ← Новая
    };
-   
+
    CreateButton(..., L"NEW EFFECT", BTN_NEW_EFFECT, ...);
-   
+
    case BTN_NEW_EFFECT: g_pendingAction = PendingAction::ForceNewEffect; break;
    ```
 
 ## ⚡ Полезные горячие клавиши
 
 При разработке в Visual Studio:
+
 - **Ctrl+F5** - Запустить без отладки
 - **F5** - Запустить с отладкой
 - **Ctrl+Shift+B** - Собрать проект

@@ -3,10 +3,12 @@
 ## ✅ Что было сделано
 
 ### Новые файлы (централизация)
+
 - ✅ **Config.h** - все константы в одном месте (150 строк)
 - ✅ **Types.h** - все enum'ы и структуры (150 строк)
 
 ### Переработанные файлы (улучшение кода)
+
 - ✅ **EffectSystem.h/cpp** - полная документация, новые функции
 - ✅ **ControlWindow.cpp** - рефакторинг с использованием Config.h
 - ✅ **SensitivityEffect.cpp** - использование Config.h
@@ -25,6 +27,7 @@
 - ✅ **FpsEffect.h** - подробная документация
 
 ### Документация (новые файлы)
+
 - ✅ **README.md** - полное руководство (400+ строк)
 - ✅ **ARCHITECTURE.md** - структура проекта (300+ строк)
 - ✅ **EXAMPLES.md** - примеры кода (400+ строк)
@@ -34,6 +37,7 @@
 ## 📊 Итоги
 
 ### По числам
+
 - 📈 Новых файлов: **4** (Config.h, Types.h, + документация)
 - 🔧 Переработанных файлов: **15+**
 - 📚 Документации (строк): **1600+**
@@ -43,9 +47,10 @@
 - 🎯 Читаемость улучшена на: **50%**
 
 ### По качеству
+
 ```
 ✅ No compiler errors
-✅ No compiler warnings  
+✅ No compiler warnings
 ✅ 100% документировано
 ✅ DRY принцип соблюдается
 ✅ SOLID принципы применены
@@ -56,6 +61,7 @@
 ## 🎯 Основные улучшения
 
 ### 1. Конфигурация
+
 ```cpp
 // БЫЛО
 #define DELAY_TIMER_ID 5000
@@ -69,6 +75,7 @@ enum TimerId { TIMER_DELAY = 5000 };
 ```
 
 ### 2. Типизация
+
 ```cpp
 // БЫЛО
 enum class EffectType { ... }; // в EffectSystem.h
@@ -83,6 +90,7 @@ enum ControlWindowButtonId { ... }; // Types.h
 ```
 
 ### 3. EffectSystem
+
 ```cpp
 // БЫЛО
 void Dev_ForceEffect(EffectType type);  // Код дублирован 2 раза
@@ -95,6 +103,7 @@ void StartRandomEffect();                     // Использует ActivateEf
 ```
 
 ### 4. ControlWindow
+
 ```cpp
 // БЫЛО
 CreateWindow(L"BUTTON", L"START SYSTEM", WS_CHILD | WS_VISIBLE,
@@ -115,10 +124,12 @@ CreateButton(hInstance, g_hwndControl, L"START SYSTEM", BTN_START_SYSTEM,
 ## 📚 Документация
 
 ### Для пользователя
+
 - **START_HERE.md** - начните отсюда (15 минут чтения)
 - **README.md** - полное руководство (30 минут)
 
 ### Для разработчика
+
 - **ARCHITECTURE.md** - структура проекта (справочник)
 - **EXAMPLES.md** - примеры кода (12 готовых примеров)
 - **Doxygen комментарии** - в каждом `.h` файле
@@ -126,6 +137,7 @@ CreateButton(hInstance, g_hwndControl, L"START SYSTEM", BTN_START_SYSTEM,
 ## 🚀 Как использовать
 
 ### Быстрый старт (5 минут)
+
 ```bash
 1. Откройте START_HERE.md
 2. Следуйте инструкциям
@@ -133,6 +145,7 @@ CreateButton(hInstance, g_hwndControl, L"START SYSTEM", BTN_START_SYSTEM,
 ```
 
 ### Понимание кода (30 минут)
+
 ```bash
 1. Прочитайте ARCHITECTURE.md
 2. Откройте Config.h и Types.h
@@ -140,6 +153,7 @@ CreateButton(hInstance, g_hwndControl, L"START SYSTEM", BTN_START_SYSTEM,
 ```
 
 ### Добавление функции (1 час)
+
 ```bash
 1. Прочитайте раздел "Добавление нового эффекта" в README.md
 2. Используйте EXAMPLES.md как справочник
@@ -149,6 +163,7 @@ CreateButton(hInstance, g_hwndControl, L"START SYSTEM", BTN_START_SYSTEM,
 ## 🎯 Результаты
 
 ### Было
+
 - ❌ Магические числа разбросаны по коду
 - ❌ Нет документации
 - ❌ Дублирование кода в EffectSystem и Dev функциях
@@ -157,6 +172,7 @@ CreateButton(hInstance, g_hwndControl, L"START SYSTEM", BTN_START_SYSTEM,
 - ❌ Непонятная структура проекта
 
 ### Стало
+
 - ✅ Все константы в Config.h
 - ✅ Полная Doxygen документация
 - ✅ DRY принцип (ActivateEffect)
@@ -167,6 +183,7 @@ CreateButton(hInstance, g_hwndControl, L"START SYSTEM", BTN_START_SYSTEM,
 ## 💻 Для разработчика
 
 ### Самые важные файлы
+
 1. **Config.h** - первый файл который меняете
 2. **Types.h** - если нужны новые типы
 3. **EffectSystem.h** - если нужно понять логику
@@ -174,12 +191,12 @@ CreateButton(hInstance, g_hwndControl, L"START SYSTEM", BTN_START_SYSTEM,
 
 ### Типичные задачи
 
-| Задача | Время | Файл |
-|--------|-------|------|
-| Изменить тайминг | 1 мин | Config.h |
-| Добавить эффект | 30 мин | Types.h, Config.h, EffectSystem.cpp |
-| Изменить UI | 5 мин | Config.h, ControlWindow.cpp |
-| Понять логику | 20 мин | EffectSystem.h/cpp |
+| Задача           | Время  | Файл                                |
+| ---------------- | ------ | ----------------------------------- |
+| Изменить тайминг | 1 мин  | Config.h                            |
+| Добавить эффект  | 30 мин | Types.h, Config.h, EffectSystem.cpp |
+| Изменить UI      | 5 мин  | Config.h, ControlWindow.cpp         |
+| Понять логику    | 20 мин | EffectSystem.h/cpp                  |
 
 ## 🔗 Навигация
 

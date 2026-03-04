@@ -50,24 +50,25 @@ ARCHITECTURE.md   ← Quick reference справочник (300+ строк)
 
 ## 🔄 Изменения в существующих файлах
 
-| Файл | Изменения |
-|------|-----------|
-| `EffectSystem.h/cpp` | +Дoxygen docs, новые функции, лучшая структура |
-| `ControlWindow.cpp` | +Вспомогательные функции, использование Config |
-| `SensitivityEffect.cpp` | +Использование Config вместо локальных констант |
-| `SensitivityHighEffect.cpp` | +Документация, использование Config |
-| `FpsEffect.cpp` | +Документация, использование Config |
-| `OverlayErase.cpp` | +Документация, использование Types.EraseHole |
-| `HalfScreenCover.cpp` | +Документация, использование Config |
-| `BlurEffect.h` | +Подробная Doxygen документация |
-| `InputSequencer.h` | +Подробная Doxygen документация |
-| `Window.h` | +Подробная Doxygen документация |
-| `ControlWindow.h` | +Подробная Doxygen документация |
-| Все `*.h` файлы эффектов | +Документация и примеры |
+| Файл                        | Изменения                                       |
+| --------------------------- | ----------------------------------------------- |
+| `EffectSystem.h/cpp`        | +Дoxygen docs, новые функции, лучшая структура  |
+| `ControlWindow.cpp`         | +Вспомогательные функции, использование Config  |
+| `SensitivityEffect.cpp`     | +Использование Config вместо локальных констант |
+| `SensitivityHighEffect.cpp` | +Документация, использование Config             |
+| `FpsEffect.cpp`             | +Документация, использование Config             |
+| `OverlayErase.cpp`          | +Документация, использование Types.EraseHole    |
+| `HalfScreenCover.cpp`       | +Документация, использование Config             |
+| `BlurEffect.h`              | +Подробная Doxygen документация                 |
+| `InputSequencer.h`          | +Подробная Doxygen документация                 |
+| `Window.h`                  | +Подробная Doxygen документация                 |
+| `ControlWindow.h`           | +Подробная Doxygen документация                 |
+| Все `*.h` файлы эффектов    | +Документация и примеры                         |
 
 ## 🎯 Ключевые улучшения в EffectSystem.cpp
 
 ### До рефакторинга
+
 ```cpp
 static const DWORD ROULETTE_INTERVAL = 45000;
 static const DWORD ROLLING_DURATION = 5000;
@@ -76,6 +77,7 @@ static const DWORD ROLLING_DURATION = 5000;
 ```
 
 ### После рефакторинга
+
 ```cpp
 // Используется Config.h
 constexpr DWORD ROULETTE_WAIT_TIME_MS = 45000;
@@ -94,18 +96,21 @@ BYTE GetRouletteFadeAlpha();
 ## 🚀 Как начать работу
 
 ### Открытие проекта
+
 1. Запустите Visual Studio 2022
 2. Откройте `dxOverlay/dxOverlay.slnx`
 3. Выберите конфигурацию `x64 | Debug` или `Release`
 4. Нажмите `Ctrl+Shift+B` для сборки
 
 ### Тестирование
+
 1. Запустите проект (F5 или Ctrl+F5)
 2. Откроется окно контроля "Chaos Controller (DEV)"
 3. Нажимайте кнопки для тестирования эффектов
 4. Смотрите результаты на экране
 
 ### Изменение параметров
+
 1. Откройте `Config.h`
 2. Отредактируйте нужные константы
 3. Пересоберите проект
@@ -113,6 +118,7 @@ BYTE GetRouletteFadeAlpha();
 ## 💡 Примеры использования
 
 ### Добавить новый эффект
+
 ```cpp
 // 1. Types.h
 enum class EffectType {
@@ -130,6 +136,7 @@ case EffectType::NewEffect: StartNewEffect(); break;
 ```
 
 ### Изменить тайминг рулетки
+
 ```cpp
 // Config.h
 constexpr DWORD ROULETTE_WAIT_TIME_MS = 60000;  // Было 45000
@@ -137,6 +144,7 @@ constexpr DWORD ROULETTE_SPIN_DURATION_MS = 10000;  // Было 5000
 ```
 
 ### Запустить конкретный эффект из DEV кода
+
 ```cpp
 Dev_ForceEffect(EffectType::Blur);
 ```

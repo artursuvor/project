@@ -5,7 +5,7 @@
 /**
  * @file Types.h
  * @brief Определение всех типов данных, используемых в приложении
- * 
+ *
  * Централизованное место для enum'ов и структур
  */
 
@@ -151,15 +151,15 @@ enum TimerId {
  */
 enum class PendingAction {
     None,
-    
+
     // System control
     StartSystem,
     StopSystem,
-    
+
     // Roulette control
     ForceRoulette,
     StopEffect,
-    
+
     // Individual effects
     ForceErase,
     ForceBlur,
@@ -169,7 +169,7 @@ enum class PendingAction {
     ForceFpsLow,
     ForceSensitivityDisable,
     ForceSensitivityHigh,
-    
+
     // Roulette preview
     PreviewRoulette,
     StopPreviewRoulette
